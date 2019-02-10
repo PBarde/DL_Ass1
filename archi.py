@@ -101,4 +101,3 @@ class CIFARResNet18(nn.Module):
         out = self.flatten(out)
         out = self.linear(out)
         return out
-

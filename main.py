@@ -6,8 +6,9 @@ from torchsummary import summary
 import numpy as np
 import torchvision.transforms
 import random
-import os.path as osp
+import os
 from archi import *
+from torch.autograd import Variable
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -27,6 +28,7 @@ classes_dict = {0: 'Cat', 1: 'Dog'}
 distrib_means = (0.48973373, 0.45465815, 0.4159738)
 distrib_stds = (0.25206217, 0.24510814, 0.24726307)
 data_augmentation = True
+l2_coeff = 5e-4
 
 # balanced training set as many cats than dogs
 
@@ -41,13 +43,17 @@ if data_augmentation:
                      torchvision.transforms.RandomRotation(90),
                      torchvision.transforms.RandomVerticalFlip()]
 
+    # aug_transforms = compose(
+    #     [r_choice(augmentations +
+    #               [torchvision.transforms.RandomOrder(augmentations)])]
+    #     + base_transforms)
     aug_transforms = compose(
-        [r_choice(augmentations +
-                  [torchvision.transforms.RandomOrder(augmentations)])]
+        [torchvision.transforms.RandomApply([r_choice(augmentations +
+                                                      [torchvision.transforms.RandomOrder(augmentations)])],
+                                            p=0.75)]
         + base_transforms)
 else:
     aug_transforms = compose(base_transforms)
-
 
 base_transforms = compose(base_transforms)
 
@@ -67,7 +73,6 @@ train_indices, test_indices = indices[:id_split], indices[id_split:]
 # Creating PT data samplers and loaders:
 train_sampler = SubsetRandomSampler(train_indices)
 test_sampler = SubsetRandomSampler(test_indices)
-
 
 train_loader = torch.utils.data.DataLoader(
     train_data, batch_size=batch_size, sampler=train_sampler, num_workers=2,
@@ -120,11 +125,11 @@ if cuda:
 summary(model, (3, 64, 64))
 
 ## Setting the optimizer
-num_epochs = 200 # number of training epochs
+num_epochs = 200  # number of training epochs
 lr0 = 0.1
-criterion = nn.CrossEntropyLoss() # to compute the loss
+criterion = nn.CrossEntropyLoss()  # to compute the loss
 optimizer = optim.SGD(model.parameters(), lr=lr0)
-#lr_lambda = lambda epoch: 0.1**(epoch/float(num_epochs))
+# lr_lambda = lambda epoch: 0.1**(epoch/float(num_epochs))
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=3, mode='max')
 
 
@@ -160,9 +165,18 @@ def evaluate(dataset_loader, criterion):
     return LOSSES / float(COUNTER)
 
 
+def L2_loss(coeff):
+    l = Variable(torch.FloatTensor(1), requires_grad=True).cuda()
+    for w in model.named_parameters():
+        if 'weight' in w[0]:
+            l = l + 0.5 * torch.pow(w[1], 2).sum()
+    return l * coeff
+
 ## Defines the train function
 def train_model():
-    root_path='./res/'
+    root_path = './res_L2/'
+    if not os.path.exists(root_path):
+        os.makedirs(root_path)
     LOSSES = 0
     COUNTER = 0
     ITERATIONS = 0
@@ -188,6 +202,10 @@ def train_model():
                 y = y.cuda()
 
             loss = criterion(model(x), y)
+
+            if l2_coeff is not None:
+                loss = loss + L2_loss(l2_coeff)
+
             loss.backward()
             optimizer.step()
 
