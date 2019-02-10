@@ -9,6 +9,7 @@ import random
 import os
 from archi import *
 from torch.autograd import Variable
+import pickle
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -83,7 +84,7 @@ test_loader = torch.utils.data.DataLoader(
     worker_init_fn=random.seed(SEED))
 
 # building model
-model_type = 'CNN'
+model_type = 'ResNet'
 cuda = torch.cuda.is_available()
 
 if cuda:
@@ -166,15 +167,19 @@ def evaluate(dataset_loader, criterion):
 
 
 def L2_loss(coeff):
-    l = Variable(torch.FloatTensor(1), requires_grad=True).cuda()
+    l = Variable(torch.FloatTensor(1), requires_grad=True)
+    if cuda:
+        l = l.cuda()
+
     for w in model.named_parameters():
         if 'weight' in w[0]:
             l = l + 0.5 * torch.pow(w[1], 2).sum()
     return l * coeff
 
+root_path = './res_L2/'
 ## Defines the train function
 def train_model():
-    root_path = './res_L2/'
+
     if not os.path.exists(root_path):
         os.makedirs(root_path)
     LOSSES = 0
@@ -201,10 +206,11 @@ def train_model():
                 x = x.cuda()
                 y = y.cuda()
 
-            loss = criterion(model(x), y)
-
             if l2_coeff is not None:
-                loss = loss + L2_loss(l2_coeff)
+                loss = criterion(model(x), y) + L2_loss(l2_coeff)
+
+            else:
+                loss = criterion(model(x), y)
 
             loss.backward()
             optimizer.step()
@@ -252,6 +258,6 @@ def train_model():
 
 store_every = 1000
 nll_train, nll_test, acc_train, acc_test, p_best = train_model()
-# import pickle
-# fp=open('drive/Colab Notebooks/q3_moredata2/summary.pckl','wb')
-# pickle.dump([nll_train, nll_test, acc_train, acc_test, p_best], fp)
+
+fp=open(root_path + 'summary.pckl','wb')
+pickle.dump([nll_train, nll_test, acc_train, acc_test, p_best], fp)
