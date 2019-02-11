@@ -51,7 +51,7 @@ if data_augmentation:
     aug_transforms = compose(
         [torchvision.transforms.RandomApply([r_choice(augmentations +
                                                       [torchvision.transforms.RandomOrder(augmentations)])],
-                                            p=0.75)]
+                                            p=1.)]
         + base_transforms)
 else:
     aug_transforms = compose(base_transforms)
@@ -176,7 +176,7 @@ def L2_loss(coeff):
             l = l + 0.5 * torch.pow(w[1], 2).sum()
     return l * coeff
 
-root_path = './res_L2/'
+root_path = './res_L2_correctLR/'
 ## Defines the train function
 def train_model():
 
@@ -248,7 +248,7 @@ def train_model():
                 print(" [ACC] TRAIN {} / TEST {}".format(
                     train_acc, test_acc))
 
-                scheduler.step(test_loss)
+                scheduler.step(test_acc)
 
     return learning_curve_nll_train, \
            learning_curve_nll_test, \
