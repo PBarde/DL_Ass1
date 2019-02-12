@@ -126,8 +126,10 @@ if cuda:
 summary(model, (3, 64, 64))
 
 ## Setting the optimizer
+model = torch.load('./res_L2_correctLR/d_aug_test_acc_0.938.pth')
+model.eval()
 num_epochs = 200  # number of training epochs
-lr0 = 0.1
+lr0 = 0.05
 criterion = nn.CrossEntropyLoss()  # to compute the loss
 optimizer = optim.SGD(model.parameters(), lr=lr0)
 # lr_lambda = lambda epoch: 0.1**(epoch/float(num_epochs))
@@ -176,7 +178,7 @@ def L2_loss(coeff):
             l = l + 0.5 * torch.pow(w[1], 2).sum()
     return l * coeff
 
-root_path = './res_L2_correctLR/'
+root_path = './res_L2_correctLR_retrain/'
 ## Defines the train function
 def train_model():
 
