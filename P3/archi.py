@@ -72,7 +72,7 @@ class CIFARResNet18(nn.Module):
         self.p = 1 if k == 3 else 2
         self.conv1 = nn.Conv2d(
             in_channels=3, out_channels=64, kernel_size=(k, k),
-            stride=1, padding=p)
+            stride=1, padding=self.p)
 
         # Create stages 1-4
         self.stage1 = self._create_stage(64, 64, stride=1)

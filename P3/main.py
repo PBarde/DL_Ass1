@@ -250,7 +250,7 @@ def train_model(train_loader, valid_loader, model, criterion, optimizer, schedul
 if __name__== '__main__':
     batch_size = 64
     data_augmentation = True
-    model_type = 'ResNet'
+    model_type = 'ResNet_3'
     train_loader, valid_loader = get_loaders(batch_size, data_augmentation)
     store_every = 3
     lr0 = 0.1

@@ -53,7 +53,7 @@ if __name__=='__main__':
         dogNcat_test, batch_size=batch_size, shuffle=False, num_workers=2)
 
     if submission_type == 'simple':
-        p_best = '.models/0.938.pthe'
+        p_best = './models/0.938.pthe'
         model = CIFARResNet18(num_classes=2, k=3).cuda()
         model.load_state_dict(torch.load(p_best))
         model.eval()
