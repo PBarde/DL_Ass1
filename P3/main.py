@@ -7,7 +7,7 @@ import numpy as np
 import torchvision.transforms
 import random
 import os
-from P3.archi import *
+from archi import *
 from torch.autograd import Variable
 import pickle
 
@@ -46,6 +46,7 @@ def get_loaders(batch_size, data_augmentation):
         augmentations = [torchvision.transforms.RandomHorizontalFlip(),
                          torchvision.transforms.RandomResizedCrop(64),
                          torchvision.transforms.RandomRotation(90),
+                         torchvision.transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.2),
                          torchvision.transforms.RandomVerticalFlip()]
 
         aug_transforms = compose(
@@ -115,7 +116,7 @@ def evaluate(model, dataset_loader, criterion, model_type):
 
 
 def L2_loss(model, coeff):
-    l = Variable(torch.FloatTensor(1), requires_grad=True)
+    l = torch.tensor(0., requires_grad=True)
     if cuda:
         l = l.cuda()
 
@@ -210,7 +211,7 @@ def train_model(train_loader, valid_loader, model, criterion, optimizer, schedul
         print(" Epoch {}: TRAIN {}".format(
             e, avg_loss))
 
-        if e % (store_every) == 0:
+        if (e+1.)%store_every == 0:
             train_loss = evaluate(model, train_loader, criterion, model_type)
             learning_curve_nll_train.append(train_loss)
             valid_loss = evaluate(model, valid_loader, criterion, model_type)
@@ -247,16 +248,16 @@ def train_model(train_loader, valid_loader, model, criterion, optimizer, schedul
 if __name__== '__main__':
     batch_size = 64
     data_augmentation = True
-    model_type = 'CNN'
+    model_type = 'ResNet'
     train_loader, valid_loader = get_loaders(batch_size, data_augmentation)
-    store_every = 1
+    store_every = 3
     lr0 = 0.1
-    num_epochs = 2  # number of training epochs
-    l2_coeff_list = [None, 1e-3, 1e-4]
+    num_epochs = 200  # number of training epochs
+    l2_coeff_list = [5e-4, 1e-4]
     criterion = nn.CrossEntropyLoss()  # to compute the loss
 
     for l2_coeff in l2_coeff_list:
-        root_path = f'./l2_{l2_coeff}/'
+        root_path = f'./new_model_full_data_aug/'
         model = build_model(model_type)
         optimizer = optim.SGD(model.parameters(), lr=lr0)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=3, mode='max')

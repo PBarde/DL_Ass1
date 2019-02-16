@@ -21,12 +21,12 @@ class ResidualBlock(nn.Module):
         # Conv Layer 1
         self.conv1 = nn.Conv2d(
             in_channels=in_channels, out_channels=out_channels,
-            kernel_size=(3, 3), stride=stride, padding=1)
+            kernel_size=(5, 5), stride=stride, padding=2)
 
         # Conv Layer 2
         self.conv2 = nn.Conv2d(
             in_channels=out_channels, out_channels=out_channels,
-            kernel_size=(3, 3), stride=1, padding=1)
+            kernel_size=(5, 5), stride=1, padding=2)
 
         # Shortcut connection to downsample residual
         self.shortcut = nn.Sequential()  ## equivalent to identity layer
@@ -69,8 +69,8 @@ class CIFARResNet18(nn.Module):
         super().__init__()
         
         self.conv1 = nn.Conv2d(
-            in_channels=3, out_channels=64, kernel_size=(3, 3),
-            stride=1, padding=1)
+            in_channels=3, out_channels=64, kernel_size=(5, 5),
+            stride=1, padding=2)
 
         # Create stages 1-4
         self.stage1 = self._create_stage(64, 64, stride=1)
