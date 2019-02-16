@@ -1,5 +1,6 @@
 from __future__ import print_function
-
+import sys
+sys.path.insert(0, "./..")
 import torch
 import torch.optim as optim
 from torchsummary import summary
@@ -7,8 +8,7 @@ import numpy as np
 import torchvision.transforms
 import random
 import os
-from archi import *
-from torch.autograd import Variable
+from P3.archi import *
 import pickle
 
 from torch.utils.data.sampler import SubsetRandomSampler
@@ -149,8 +149,10 @@ def build_model(model_type):
             nn.ReLU(),
             ResLinear(100, 10)
         )
-    elif model_type == 'ResNet':
-        model = CIFARResNet18(num_classes=2)
+    elif model_type == 'ResNet_3':
+        model = CIFARResNet18(num_classes=2, k=3)
+    elif model_type == 'ResNet_5':
+        model = CIFARRestNet18(num_classes=2, k=5)
 
     else:
         raise ValueError
@@ -257,7 +259,7 @@ if __name__== '__main__':
     criterion = nn.CrossEntropyLoss()  # to compute the loss
 
     for l2_coeff in l2_coeff_list:
-        root_path = f'./new_model_full_data_aug/'
+        root_path = f'./models/'
         model = build_model(model_type)
         optimizer = optim.SGD(model.parameters(), lr=lr0)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=3, mode='max')

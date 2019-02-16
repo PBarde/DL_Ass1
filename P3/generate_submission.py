@@ -6,6 +6,7 @@ from P3.main import distrib_means, distrib_stds, classes_dict
 import torchvision.transforms
 import os.path as osp
 import csv
+from P3.archi import *
 
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -38,10 +39,7 @@ class IdImageFolder(torchvision.datasets.ImageFolder):
 
 if __name__=='__main__':
 
-    p_best = './new_model_full_data_aug/d_aug_valid_acc_0.95.pth'
-    model = torch.load(p_best)
-    model.eval()
-
+    submission_type = 'simple'
     batch_size = 64
 
     dogNcat_transforms = torchvision.transforms.Compose(
@@ -54,13 +52,49 @@ if __name__=='__main__':
     test_loader = torch.utils.data.DataLoader(
         dogNcat_test, batch_size=batch_size, shuffle=False, num_workers=2)
 
-    with open('submission_new_model.csv', mode='w') as csv_file:
-        fieldnames = ['id', 'label']
-        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-        writer.writeheader()
-        for batch in test_loader:
-            x, y, id = batch
-            x = x.cuda()
-            raw_labels = model(x).max(1)[1].cpu().numpy()
-            for i, l in zip(id, raw_labels):
-                writer.writerow({'id': i, 'label': classes_dict[l]})
+    if submission_type == 'simple':
+        p_best = '.models/0.938.pthe'
+        model = CIFARResNet18(num_classes=2, k=3).cuda()
+        model.load_state_dict(torch.load(p_best))
+        model.eval()
+
+        with open('submission.csv', mode='w') as csv_file:
+            fieldnames = ['id', 'label']
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            for batch in test_loader:
+                x, y, id = batch
+                x = x.cuda()
+                raw_labels = model(x).max(1)[1].cpu().numpy()
+                for i, l in zip(id, raw_labels):
+                    writer.writerow({'id': i, 'label': classes_dict[l]})
+
+    elif submission_type == 'multi':
+
+        root_models = './models/'
+        model_list = ['0.94.pthe', 'l2_0.926.pthe', '0.926.pthe', '0.939.pthe',
+                      '0.938.pthe', 'retrain_0.938.pthe']
+        model_list = [root_models + m for m in model_list]
+
+        models = [CIFARResNet18(num_classes=2, k=3).cuda() for _ in model_list]
+
+        for m, w in zip(models, model_list):
+            m.load_state_dict(torch.load(w))
+            m.eval()
+
+        with open('submission_multi.csv', mode='w') as csv_file:
+            fieldnames = ['id', 'label']
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer.writeheader()
+            for batch in test_loader:
+                x, y, id = batch
+                x = x.cuda()
+                group_labels = [m(x).max(1)[1].cpu().numpy() for m in models]
+                raw_labels = []
+                for i in range(len(id)):
+                    n_p = [0, 0]
+                    for j in range(len(group_labels)):
+                        n_p[group_labels[j][i]] += 1
+                    raw_labels.append(np.argmax(n_p))
+                for i, l in zip(id, raw_labels):
+                    writer.writerow({'id': i, 'label': classes_dict[l]})

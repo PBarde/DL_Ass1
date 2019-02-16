@@ -1,7 +1,9 @@
 import torch
-from archi import *
+import sys
+sys.path.insert(0, "./..")
+from P3.archi import *
 
-path = './new_model_full_data_aug/d_aug_valid_acc_0.95.pth'
+path = './models/0.938.pth'
 model = torch.load(path)
 model.eval()
 torch.save(model.state_dict(), path + 'e')

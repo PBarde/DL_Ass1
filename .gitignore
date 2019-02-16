@@ -1,0 +1,5 @@
+*
+!.gitignore
+!P3/*.py
+!P3/*.ipynb
+!P2/*.ipynb

@@ -15,18 +15,19 @@ class Flatten(nn.Module):
 class ResidualBlock(nn.Module):
     expansion = 1
 
-    def __init__(self, in_channels, out_channels, stride=1):
+    def __init__(self, in_channels, out_channels, stride=1, k=3):
         super().__init__()
+        p = 1 if k == 3 else 2
 
         # Conv Layer 1
         self.conv1 = nn.Conv2d(
             in_channels=in_channels, out_channels=out_channels,
-            kernel_size=(5, 5), stride=stride, padding=2)
+            kernel_size=(k, k), stride=stride, padding=p)
 
         # Conv Layer 2
         self.conv2 = nn.Conv2d(
             in_channels=out_channels, out_channels=out_channels,
-            kernel_size=(5, 5), stride=1, padding=2)
+            kernel_size=(k, k), stride=1, padding=p)
 
         # Shortcut connection to downsample residual
         self.shortcut = nn.Sequential()  ## equivalent to identity layer
@@ -65,12 +66,13 @@ class ResLinear(nn.Module):
 
 
 class CIFARResNet18(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, k=3):
         super().__init__()
-        
+        self.k = k
+        self.p = 1 if k == 3 else 2
         self.conv1 = nn.Conv2d(
-            in_channels=3, out_channels=64, kernel_size=(5, 5),
-            stride=1, padding=2)
+            in_channels=3, out_channels=64, kernel_size=(k, k),
+            stride=1, padding=p)
 
         # Create stages 1-4
         self.stage1 = self._create_stage(64, 64, stride=1)
@@ -83,8 +85,8 @@ class CIFARResNet18(nn.Module):
     # A stage is just two residual blocks for ResNet18
     def _create_stage(self, in_channels, out_channels, stride):
         return nn.Sequential(
-            ResidualBlock(in_channels, out_channels, stride),
-            ResidualBlock(out_channels, out_channels, 1)
+            ResidualBlock(in_channels, out_channels, stride, k=self.k),
+            ResidualBlock(out_channels, out_channels, 1, k=self.k)
         )
 
     def forward(self, x):
